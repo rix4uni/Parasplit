@@ -1,0 +1,70 @@
+#!/bin/bash
+
+# Function to handle termination and cleanup
+cleanup() {
+    # Kill all child processes
+    pkill -P $$
+    echo -e "\nScript interrupted. All spawned processes have been terminated."
+    exit 1
+}
+
+# Trap the SIGINT signal
+trap 'cleanup' SIGINT
+
+# Default values
+JOBS=""
+FILENAME=""
+COMMAND_TEMPLATE=""
+
+# Parse command line options
+while [[ $# -gt 0 ]]; do
+    key="$1"
+    case $key in
+        -j)
+            JOBS="$2"
+            shift
+            shift
+            ;;
+        -file)
+            FILENAME="$2"
+            shift
+            shift
+            ;;
+        *)
+            COMMAND_TEMPLATE="$@"
+            break
+            ;;
+    esac
+done
+
+# Validation
+if [[ -z "$JOBS" || -z "$FILENAME" || -z "$COMMAND_TEMPLATE" ]]; then
+    echo "Usage: parasplit -j <number of jobs> -file <filename> <command template>"
+    exit 1
+fi
+
+if [[ ! "$JOBS" =~ ^[0-9]+$ ]]; then
+    echo "Error: The number of jobs must be a positive integer."
+    exit 1
+fi
+
+mkdir -p /root/bin/Parasplit/parasplit_tmp
+
+# Split the file into multiple files
+split -n l/$JOBS --numeric-suffixes=1 --additional-suffix=.txt "$FILENAME" /root/bin/Parasplit/parasplit_tmp/split_
+
+# Loop through each file and run the command in the background
+for ((i=1; i<=$JOBS; i++)); do
+    suffix=$(printf "%02d" $i)
+    file="/root/bin/Parasplit/parasplit_tmp/split_$suffix.txt"
+    if [[ -s "$file" ]]; then  # Check if the file is not empty
+        cmd="${COMMAND_TEMPLATE/\{\}/$file}"
+        eval "$cmd &"
+    fi
+done
+
+# Wait for all background processes to complete
+wait
+
+# Deleting the directory
+rm -rf /root/bin/Parasplit/parasplit_tmp
