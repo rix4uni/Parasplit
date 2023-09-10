@@ -1,8 +1,16 @@
 # Parasplit
  Split wildcards.txt and Run parallelly
 
-# Usage
+# Install
+```
+git clone https://github.com/rix4uni/Parasplit.git && cd Parasplit && chmod +x parasplit && cd .. && mv Parasplit ~/bin
+```
 
+```
+if ! grep -qxF 'export PATH="$HOME/bin/Parasplit:$PATH"' ~/.bashrc ; then echo -e '\nexport PATH="$HOME/bin/Parasplit:$PATH"' >> ~/.bashrc ; fi && source ~/.bashrc
+```
+
+# Usage
 This command split wildcards.txt in 5 files like this, then Running parallelly
 ```
 split_01.txt
